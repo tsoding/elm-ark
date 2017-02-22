@@ -2,6 +2,7 @@ import Html exposing (Html)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, millisecond)
+import List exposing (map)
 
 main = Html.program { init = init
                     , view = view
@@ -11,21 +12,28 @@ main = Html.program { init = init
 
 -- MODEL
 
-type alias Model = { x : Float
-                   , y : Float
-                   , dx : Float
-                   , dy : Float
-                   , radius : Float
+type alias Ball = { x : Float
+                  , y : Float
+                  , dx : Float
+                  , dy : Float
+                  , radius : Float
+                  }
+
+makeBall : Float -> Float -> Ball
+makeBall x y = { x = x
+               , y = y
+               , dx = 2.0
+               , dy = 2.0
+               , radius = 10.0}
+
+type alias Model = { balls : List Ball
                    , screenWidth : Float
                    , screenHeight : Float
                    }
 
 init : (Model, Cmd Msg)
-init = ({ x = 60.0
-        , y = 60.0
-        , dx = 2.0
-        , dy = 2.0
-        , radius = 10.0
+init = ({ balls = [ makeBall 60.0 60.0
+                  , makeBall 160.0 160.0]
         , screenWidth = 400
         , screenHeight = 300
         }, Cmd.none)
@@ -34,21 +42,22 @@ init = ({ x = 60.0
 
 type Msg = Tick Time
 
-moveBall : Model -> Model
-moveBall model = { model | x = model.x + model.dx
-                         , y = model.y + model.dy }
+moveBall : Ball -> Ball
+moveBall ball = { ball | x = ball.x + ball.dx
+                       , y = ball.y + ball.dy }
 
-bounceBall : Model -> Model
-bounceBall model = { model | dx = if model.x - model.radius <= 0 || model.x + model.radius >= model.screenWidth
-                                  then -model.dx
-                                  else model.dx
-                           , dy = if model.y - model.radius <= 0 || model.y + model.radius >= model.screenHeight
-                                  then -model.dy
-                                  else model.dy }
+bounceBall : (Float, Float) -> Ball -> Ball
+bounceBall (screenWidth, screenHeight) ball =
+    { ball | dx = if ball.x - ball.radius <= 0 || ball.x + ball.radius >= screenWidth
+                  then -ball.dx
+                  else ball.dx
+           , dy = if ball.y - ball.radius <= 0 || ball.y + ball.radius >= screenHeight
+                  then -ball.dy
+                  else ball.dy }
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update _ model =
-    (model |> moveBall |> bounceBall, Cmd.none)
+    ({model | balls = List.map (moveBall >> bounceBall (model.screenWidth, model.screenHeight)) model.balls }, Cmd.none)
 
 -- SUBSCRIPTIONS
 
@@ -57,10 +66,14 @@ subscriptions model = Time.every (33 * millisecond) Tick
 
 -- VIEW
 
+viewBall : Ball -> Svg Msg
+viewBall ball =
+    circle [ cx (toString ball.x)
+           , cy (toString ball.y)
+           , r (toString ball.radius), Svg.Attributes.style "fill:red" ]
+           []
+
 view : Model -> Html Msg
 view model =
     svg [ width (toString model.screenWidth), height (toString model.screenHeight)]
-        [ circle [ cx (toString model.x)
-                 , cy (toString model.y)
-                 , r (toString model.radius), Svg.Attributes.style "fill:red" ]
-              []]
+        (List.map viewBall model.balls)
