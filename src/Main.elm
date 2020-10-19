@@ -65,7 +65,7 @@ update _ model =
 -- SUBSCRIPTIONS
 
 millisecond : Float
-millisecond = 1 / 1000000
+millisecond = 1 / 1000
 
 subscriptions : Model -> Sub Msg
 subscriptions model = Time.every (33 * millisecond) Tick
