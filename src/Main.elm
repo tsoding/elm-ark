@@ -1,14 +1,17 @@
+module Main exposing (..)
+
+import Browser
 import Html exposing (Html)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-import Time exposing (Time, millisecond)
+import Time as Time exposing (Posix)
 import List exposing (map)
 
-main = Html.program { init = init
-                    , view = view
-                    , update = update
-                    , subscriptions = subscriptions
-                    }
+main = Browser.element { init = init
+                       , view = view
+                       , update = update
+                       , subscriptions = subscriptions
+                       }
 
 -- MODEL
 
@@ -31,8 +34,8 @@ type alias Model = { balls : List Ball
                    , screenHeight : Float
                    }
 
-init : (Model, Cmd Msg)
-init = ({ balls = [ makeBall 60.0 60.0
+init : () -> (Model, Cmd Msg)
+init _ = ({ balls = [ makeBall 60.0 60.0
                   , makeBall 160.0 160.0]
         , screenWidth = 400
         , screenHeight = 300
@@ -40,7 +43,7 @@ init = ({ balls = [ makeBall 60.0 60.0
 
 -- UPDATE
 
-type Msg = Tick Time
+type Msg = Tick Posix
 
 moveBall : Ball -> Ball
 moveBall ball = { ball | x = ball.x + ball.dx
@@ -61,6 +64,9 @@ update _ model =
 
 -- SUBSCRIPTIONS
 
+millisecond : Float
+millisecond = 1 / 1000
+
 subscriptions : Model -> Sub Msg
 subscriptions model = Time.every (33 * millisecond) Tick
 
@@ -68,12 +74,12 @@ subscriptions model = Time.every (33 * millisecond) Tick
 
 viewBall : Ball -> Svg Msg
 viewBall ball =
-    circle [ cx (toString ball.x)
-           , cy (toString ball.y)
-           , r (toString ball.radius), Svg.Attributes.style "fill:red" ]
+    circle [ cx (String.fromFloat ball.x)
+           , cy (String.fromFloat ball.y)
+           , r (String.fromFloat ball.radius), Svg.Attributes.style "fill:red" ]
            []
 
 view : Model -> Html Msg
 view model =
-    svg [ width (toString model.screenWidth), height (toString model.screenHeight)]
+    svg [ width (String.fromFloat model.screenWidth), height (String.fromFloat model.screenHeight)]
         (List.map viewBall model.balls)
